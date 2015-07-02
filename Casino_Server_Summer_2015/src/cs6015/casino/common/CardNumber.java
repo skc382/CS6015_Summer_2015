@@ -2,8 +2,8 @@ package cs6015.casino.common;
 
 public enum CardNumber
 {
-	ACE("Ace"), KING("King"), QUEEN("Queen"), JACK("Jack"), TEN("Ten"), NINE("Nine"), EIGHT("Eight"),
-	SEVEN("Seven"), SIX("Six"), FIVE("Five"), FOUR("Four"), THREE("Three"), TWO("Two");
+	ACE("ACE"), KING("KING"), QUEEN("QUEEN"), JACK("JACK"), TEN("TEN"), NINE("NINE"), EIGHT("EIGHT"),
+	SEVEN("SEVEN"), SIX("SIX"), FIVE("FIVE"), FOUR("FOUR"), THREE("THREE"), TWO("TWO");
 	
 	private String enumVal;
 	
@@ -16,4 +16,5 @@ public enum CardNumber
 	{
 		return enumVal;
 	}
+	
 }

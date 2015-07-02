@@ -4,30 +4,34 @@ import java.io.Serializable;
 
 import cs6015.casino.types.PokerType;
 
-public class PokerMessage<STRING_OR_INT_TYPE> implements Serializable{
+public class PokerMessage<T> implements Serializable{
 
 	private static final long serialVersionUID = 2593093065324542708L;
 	
-	private STRING_OR_INT_TYPE message;
+	private T message;
+	private final String type;
 	private GameState<PokerType> pokerState;
 
-	public PokerMessage(GameState<PokerType> pokerState) {
+	public PokerMessage(GameState<PokerType> pokerState, String type) {
 		super();
+		this.type = type;
 		this.pokerState = pokerState;
 	}
 
-	public PokerMessage(STRING_OR_INT_TYPE message) {
+	public PokerMessage(T message, String type) {
 		super();
 		this.message = message;
+		this.type = type;
 	}
-
-	public PokerMessage(STRING_OR_INT_TYPE message, GameState<PokerType> pokerState) {
+	
+	public PokerMessage(T message, GameState<PokerType> pokerState, String type) {
 		super();
 		this.message = message;
+		this.type = type;
 		this.pokerState = pokerState;
 	}
 
-	public STRING_OR_INT_TYPE getMessage() {
+	public T getMessage() {
 		return message;
 	}
 
@@ -35,8 +39,18 @@ public class PokerMessage<STRING_OR_INT_TYPE> implements Serializable{
 		return pokerState;
 	}
 	
+	public String getType() {
+		return type;
+	}
+	
+	public boolean isPokerStateNull()
+	{
+		return (this.pokerState == null);
+	}
+	
 	public enum PokerEnum{
-		WAIT("Waiting"), NO_FOLD("Bet or Raise"), CALL("Bet or Raise or Fold") ;
+		WAIT("Waiting"), POKERSTATE("Poker State"), BET_CHECK("Bet or Check"), BET_CHECK_FOLD("Bet or Check or Fold"),
+		FOLD("Fold"), YOUR_TURN("your turn"), NOT_YOUR_TURN("Not your turn");
 		
 		private String enumVal;
 		
@@ -49,7 +63,11 @@ public class PokerMessage<STRING_OR_INT_TYPE> implements Serializable{
 		{
 			return enumVal;
 		}
-		
-		
+	}
+
+	@Override
+	public String toString() {
+		return "PokerMessage [message=" + message + ", type=" + type
+				+ ", pokerState=" + pokerState + "]";
 	}
 }

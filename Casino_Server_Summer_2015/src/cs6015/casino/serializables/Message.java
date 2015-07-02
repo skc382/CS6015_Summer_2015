@@ -6,7 +6,7 @@ import cs6015.casino.types.ClientMessageType;
 import cs6015.casino.types.ServerMessageType;
 
 public final class Message<T> implements Serializable {
-	private static final long serialVersionUID = 2386173048019692746L;
+	private static final long serialVersionUID = 8837691826365538839L;
 	
 	private String playerName;
 	private int sessionId;
@@ -71,6 +71,14 @@ public final class Message<T> implements Serializable {
 
 	public void setGameMessage(T gameMessage) {
 		this.gameMessage = gameMessage;
+	}
+
+	@Override
+	public String toString() {
+		return "Message [playerName=" + playerName + ", sessionId=" + sessionId
+				+ ", money=" + money + ", clientMessageType="
+				+ clientMessageType + ", serverMessageType="
+				+ serverMessageType + ", gameMessage=" + gameMessage + "]";
 	}
 
 }

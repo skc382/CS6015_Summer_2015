@@ -6,6 +6,10 @@ import java.net.Socket;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
@@ -21,38 +25,35 @@ public final class ServerApplication {
 	private static Set<PokerGamePlay> pokerGamesEngaged;
 	private static Set<BlackJackGamePlay> blackJackGamesEngaged;
 	private ServerSocket mainServerSocket;
-	private DatabaseHandler xml;
-	
+	private final DatabaseHandler xml;
+	private static ScheduledExecutorService executeDB;
+
 	ServerApplication() throws IOException
 	{
 		mainServerSocket = new ServerSocket(9838);
 		playersLoggedIn = Collections.newSetFromMap(new ConcurrentHashMap<RequestHandler, Boolean>());
 		pokerGamesEngaged = Collections.newSetFromMap(new ConcurrentHashMap<PokerGamePlay, Boolean>());
 		blackJackGamesEngaged = Collections.newSetFromMap(new ConcurrentHashMap<BlackJackGamePlay, Boolean>());
+		executeDB = Executors.newSingleThreadScheduledExecutor();
 		startGameBoards();
 
-//		xml = new DatabaseHandler();
-//		Thread readerThread = new Thread(){
-//			public void run() {
-//				while (true) {
-//					try {
-//						xml.writeXmlToFile();
-//						Thread.sleep(60*1000);
-//					}
-//					catch (Exception e) {
-//						System.out.println("Exception while handling received message:");
-//						e.printStackTrace();
-//					}
-//				}
-//			}
-//		};
-//		readerThread.setDaemon(true);
-//		readerThread.start();
+		xml = new DatabaseHandler();
+		executeDB.scheduleWithFixedDelay(new Runnable(){
+			public void run() {
+				try {
+					xml.writeXmlToFile();
+				}
+				catch (Exception e) {
+					log.error(e);
+					// 	    				e.printStackTrace();
+				}
+			}
+		}, 10, 10, TimeUnit.SECONDS);
 
 		while(true)
 		{
 			Socket newSocket = mainServerSocket.accept();
-			playersLoggedIn.add(new RequestHandler(newSocket));
+			new RequestHandler(newSocket, xml);
 		}
 
 	}
@@ -65,11 +66,12 @@ public final class ServerApplication {
 			log.info("/******************************************************/");
 			log.info("Server starting");
 			log.info("/******************************************************/");
-			//new ServerApplication();
+			new ServerApplication();
 
 
 		} catch (Exception e) {
 			log.equals(e);
+			executeDB.shutdown();
 			e.printStackTrace();
 		}
 	}
@@ -78,7 +80,7 @@ public final class ServerApplication {
 	{
 		int i = 1;
 		log.info("Starting poker game and black jack game servers");
-		while(i <= 3)
+		while(i <= 10)
 		{
 			pokerGamesEngaged.add(PokerGamePlay.getInstances(ClientMessageType.POKER.toString(), i));
 			blackJackGamesEngaged.add(BlackJackGamePlay.getInstances(ClientMessageType.BLACKJACK.toString(), i));
@@ -98,6 +100,19 @@ public final class ServerApplication {
 		}
 
 		return PokerGamePlay.INVALID;
+	}
+
+	public static synchronized BlackJackGamePlay availableFreeBlackJackGamePlay()
+	{
+		for(BlackJackGamePlay blackJackGame : blackJackGamesEngaged)
+		{
+			if(blackJackGame.getPlayerConnectionsSize() < 1)
+			{
+				return blackJackGame;
+			}
+		}
+
+		return BlackJackGamePlay.INVALID;
 	}
 
 }

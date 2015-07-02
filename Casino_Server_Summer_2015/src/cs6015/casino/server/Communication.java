@@ -62,7 +62,6 @@ public class Communication {
 				log.error(e);
 			}
 			log.error(ex);
-			ex.printStackTrace();
 		}
 	}
 
@@ -72,16 +71,14 @@ public class Communication {
 		try {
 			if(message instanceof Message<?>)
 			{
-				if(((Message<?>)message).getServerMessageType().equals(ServerMessageType.CLOSECONNECTION))
+				if(((Message<?>)message).getServerMessageType().equals(ServerMessageType.CLOSECONNECTION.toString()))
 				{
 					outgoingMessages.clear();
 				}
 				outgoingMessages.put(message);
 			}
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			log.error(e);
-			e.printStackTrace();
 		}
 	}
 	
@@ -96,19 +93,21 @@ public class Communication {
 				Object message = incomingMessages.take();
 				if(message instanceof Message<?>)
 				{
-					if(((Message<?>)message).getClientMessageType().equals(ClientMessageType.CLOSECONNECTION))
+					if(((Message<?>)message).getClientMessageType().equals(ClientMessageType.CLOSECONNECTION.toString()))
+					{
 						connectionClosed = true;
+						log.info("Connection closed by client. Player name: "+ Communication.this.client.getPlayer());
 						closeConnection();
-				}
-				else{
-					client.processMessage(message);
+					}
+					else{
+						client.processMessage(message);
+					}
 				}
 			}
 			}
 			catch(Exception e)
 			{
 				log.error(e);
-				e.printStackTrace();
 			}
 			
 		}
@@ -128,10 +127,10 @@ public class Communication {
 				if(message instanceof Message<?>)
 				{
 					Message<?> msg = (Message<?>) message;
-					if(msg.getClientMessageType().equals(ClientMessageType.CLOSECONNECTION))
+					if(msg.getClientMessageType().equals(ClientMessageType.CLOSECONNECTION.toString()))
 					{
 						connectionClosed = true;
-						System.out.println("Client connection closing");
+						log.info("Connection closed by client. Player name: "+ Communication.this.client.getPlayer());
 						closeConnection();
 					}
 					else
@@ -144,7 +143,7 @@ public class Communication {
 			catch (ClassNotFoundException | IOException | InterruptedException e) 
 			{
 				log.error(e);
-				e.printStackTrace();
+				//e.printStackTrace();
 				closeConnection();
 			} 
 		}
@@ -167,9 +166,11 @@ public class Communication {
 					Message<?> msg = (Message<?>) message;
 					outChannel.writeObject(msg);
 					outChannel.flush();
+					outChannel.reset();
 					
-					if(msg.getServerMessageType().equals(ServerMessageType.CLOSECONNECTION))
+					if(msg.getServerMessageType().equals(ServerMessageType.CLOSECONNECTION.toString()))
 					{
+						log.info("Connection closed by client. Player name: "+ Communication.this.client.getPlayer());
 						closeConnection();
 					}
 				}
@@ -177,7 +178,7 @@ public class Communication {
 			} catch (InterruptedException | IOException e) 
 			{
 				log.error(e);
-				e.printStackTrace();
+				//e.printStackTrace();
 				closeConnection();
 			}
 		}	
@@ -187,17 +188,22 @@ public class Communication {
 	{
 		try
 		{
+			log.info("Closing Connection of request");
+			this.clientSocket.close();
+			log.info("Closing client socket");
 			executor.shutdown();
-			if(ServerApplication.playersLoggedIn.contains(this))
+			log.info("Shutting down communication threads");
+			if(ServerApplication.playersLoggedIn.contains(this.client))
 			{
-				ServerApplication.playersLoggedIn.remove(this);
+				ServerApplication.playersLoggedIn.remove(this.client);
+				log.info("Removing the client from logged in clients");
 			}
 		}
-		catch(NoSuchElementException e)
+		catch(NoSuchElementException | IOException e)
 		{
 			log.error(e);
-			e.printStackTrace();
-		}
+			//e.printStackTrace();
+		} 
 	}
 	
 }

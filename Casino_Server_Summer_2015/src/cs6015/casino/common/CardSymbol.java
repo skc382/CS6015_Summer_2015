@@ -2,7 +2,7 @@ package cs6015.casino.common;
 
 public enum CardSymbol
 {
-	CLUBS("Clubs"), SPADES("Spades"), HEARTS("Hearts"), DIAMONDS("Diamonds");
+	CLUBS("CLUBS"), SPADES("SPADES"), HEARTS("HEARTS"), DIAMONDS("DIAMONDS");
 	
 	private String enumVal;
 	

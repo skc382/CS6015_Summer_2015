@@ -51,7 +51,27 @@ public final class GameState<T extends GameType> implements Serializable{
 		return tableCards;
 	}
 
-	
-	
+	public enum GameStatusEnum{
+		UPDATE_ALL("UPDATE_ALL"), UPDATE_TABLE("UPDATE_TABLE"), UPDATE_POT("UPDATE_POT"), WON("WON"), LOST("LOST"), USERACTION("USERACTION") ;
+		
+		private String enumVal;
+		
+		GameStatusEnum(String enumVal)
+		{
+			this.enumVal = enumVal;
+		}
+		
+		public String stringVal()
+		{
+			return enumVal;
+		}
+	}
+
+	@Override
+	public String toString() {
+		return "GameState [player1=" + player1 + ", player2=" + player2
+				+ ", player3=" + player3 + ", tableCards=" + tableCards
+				+ ", potMoney=" + potMoney + ", gameStatus=" + gameStatus + "]";
+	}
 	
 }

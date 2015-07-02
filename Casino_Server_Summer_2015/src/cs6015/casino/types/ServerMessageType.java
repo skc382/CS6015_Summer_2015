@@ -8,6 +8,7 @@ public enum ServerMessageType
 	AUTHENTICATIONFAIL,
 	PLAYPOKER,
 	PLAYBLACKJACK,
+	PLAYSLOTS,
 	UPDATEMONEY,
 	CLOSECONNECTION;
 	
@@ -20,6 +21,7 @@ public enum ServerMessageType
 		case AUTHENTICATIONSUCCESS : return "Success";
 		case AUTHENTICATIONFAIL : return "failed";
 		case PLAYPOKER : return "Play Poker";
+		case PLAYSLOTS : return "Play Slots";
 		case UPDATEMONEY : return "update money";
 		case PLAYBLACKJACK : return "Play BlackJack";
 		case CLOSECONNECTION : return "Close";

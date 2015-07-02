@@ -2,7 +2,7 @@ package cs6015.casino.types;
 
 public enum ClientMessageType {
 	
-	LOGIN, REGISTER, POKER, BLACKJACK, SLOTS, CLOSECONNECTION, UPDATEMONEY;
+	LOGIN, REGISTER, POKER, BLACKJACK, SLOTS, CLOSECONNECTION, UPDATEMONEY, QUIT;
 	
 	public String toString()
 	{
@@ -15,6 +15,7 @@ public enum ClientMessageType {
 		case SLOTS : return "Slots";
 		case CLOSECONNECTION : return "Close";
 		case UPDATEMONEY : return "update money";
+		case QUIT : return "Quit";
 		
 		default: throw new IllegalArgumentException();
 		}

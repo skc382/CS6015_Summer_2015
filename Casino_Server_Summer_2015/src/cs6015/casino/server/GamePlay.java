@@ -31,6 +31,7 @@ public abstract class GamePlay<T extends GameType> {
 	protected Deck deck;
 	protected ArrayList<Card> tableCards;
 	protected Player currentPlayer;
+	protected Player firstPlayer;
 
 	protected GamePlay(String gameName, int gameId)
 	{
@@ -38,6 +39,11 @@ public abstract class GamePlay<T extends GameType> {
 		this.gamePlayId = gameId;
 		playerConnections = new ConcurrentHashMap<Player, RequestHandler>();
 		deck = new Deck();
+	}
+	
+	public int getPlayerConnectionsSize()
+	{
+		return playerConnections.size();
 	}
 	
 	public boolean isGameFull()
@@ -65,11 +71,24 @@ public abstract class GamePlay<T extends GameType> {
 		}
 		playerConnections.put(player, handler);
 		handler.setCurrentGame(this); //Assign current game to the request handler
-
+		sendWaitMessage(player,"Waiting for other Players to connect");
+		
 		if(allPlayersConnected())
 		{
 			this.BeginGamePlay();  //Start the game
 		}
+	}
+	
+	protected void  registerPlayerForGame(Player player, RequestHandler handler, boolean singlePlayer) throws CasinoException
+	{
+		if(this.playerConnections.size() >= 1)
+		{
+			throw new CasinoException(String.format("Cannot add Player: %s because the game: %s is already engaged", player.getPlayerName(), this.gamePlayName));
+		}
+		playerConnections.put(player, handler);
+		handler.setCurrentGame(this); //Assign current game to the request handler
+		
+		this.BeginGamePlay();  //Start the game
 	}
 	
 	protected void sendMessageToClient(Player player, Message<?> msg) {
@@ -86,11 +105,6 @@ public abstract class GamePlay<T extends GameType> {
 		}
 	}
 
-	protected void exitGame(RequestHandler handler) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	protected void loadPlayerList() {
 		this.playerList = new ArrayList<Player>();
 		Iterator<Entry<Player, RequestHandler>> it = this.playerConnections.entrySet().iterator();
@@ -103,9 +117,24 @@ public abstract class GamePlay<T extends GameType> {
 
 	protected Player getNextPlayer(Player currentPlayer) {
 		int index, newIndex;
+		if(currentPlayer == null)
+			throw new NullPointerException("No player at getPlayerIndex()");
+		
 		index = this.playerList.indexOf(currentPlayer);
 		newIndex = (index + 1) % this.playerList.size();
 		return this.playerList.get(newIndex);
+	}
+	
+	protected int getPlayerIndex(Player player) throws CasinoException
+	{
+		if(player == null)
+			throw new NullPointerException("No player at getPlayerIndex()");
+		
+		if(!this.playerList.contains(player))
+			throw new CasinoException("Cannot get player index coz The player: "+ player.getPlayerName() 
+												+ " does not exist in the playerList of " + this.gamePlayName + "-" + this.gamePlayId);
+		
+		return (this.playerList.indexOf(player) + 1); // Adding one of index because array list is zero based
 	}
 
 	protected void dealCardToPlayer(Player player) {
@@ -118,10 +147,13 @@ public abstract class GamePlay<T extends GameType> {
 	
 	protected abstract void initializeTableCards();
 	
+	protected abstract <K> K addToTableCards(Card card) throws CasinoException;
+	
 	protected abstract void BeginGamePlay();
 
 	protected abstract void play(Player player, Message<?> msg);
 	
+	protected abstract void sendWaitMessage(Player player, String message);
 	
-	
+	protected abstract void exitGame(RequestHandler handler);
 }

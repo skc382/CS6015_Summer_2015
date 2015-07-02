@@ -1,15 +1,11 @@
 package cs6015.casino.server;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
-import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -18,9 +14,9 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 public class DatabaseHandler {
+	private final static Logger log = Logger.getLogger(DatabaseHandler.class);
 	
 	Document document;
-	
 	File xmlFile;
 	SAXBuilder builder;
 	Element rootNode;
@@ -36,9 +32,11 @@ public class DatabaseHandler {
 		 } 
 		 catch (IOException io) {
 		 			System.out.println(io.getMessage());
+		 			log.error(io);
 		 } 
 		 catch (JDOMException jdomex) {
 		 		System.out.println(jdomex.getMessage());
+		 		log.error(jdomex);
 		 }
 		
 	}
@@ -60,6 +58,7 @@ public class DatabaseHandler {
 	
 	public synchronized void updateMoney(String playerName, int money)
 	{
+		log.info(String.format("Updating player-%s money as %d dollars", playerName, money));
 		List<Element> list = rootNode.getChildren();
 		 
 		for (int i = 0; i < list.size(); i++) {
@@ -77,8 +76,11 @@ public class DatabaseHandler {
 		XMLOutputter xmlOutput = new XMLOutputter();
 		xmlOutput.setFormat(Format.getPrettyFormat());
 		xmlOutput.output(document, new FileWriter("Database.xml"));
-		System.out.println("Writing to database");
+//		System.out.println("Writing to database");
+		log.info("Writing to database");
+		
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}
@@ -105,7 +107,7 @@ public class DatabaseHandler {
 	public synchronized void addPlayer(String playerName, int money)
 	{
 		Element child = new Element("Player");
-		child.addContent(new Element("id").setText(playerName));
+		child.addContent(new Element("name").setText(playerName));
 		child.addContent(new Element("money").setText(Integer.toString(money)));
 		rootNode.addContent(child);
 		writeXmlToFile();

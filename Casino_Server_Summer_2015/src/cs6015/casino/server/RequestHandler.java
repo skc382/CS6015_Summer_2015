@@ -8,6 +8,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import cs6015.casino.blackjack.BlackJackGamePlay;
 import cs6015.casino.exceptions.CasinoException;
 import cs6015.casino.poker.PokerGamePlay;
 import cs6015.casino.serializables.BlackJackMessage;
@@ -26,22 +27,59 @@ import cs6015.casino.types.ServerMessageType;
 public final class RequestHandler {
 	private final static Logger log = Logger.getLogger(RequestHandler.class);
 
+	private final int sessionId;
+	private final Communication connection;
 	private Player player;
-	private DatabaseHandler xml;
-	private Communication connection;
+	private final DatabaseHandler xml;
 	private GamePlay<?> currentGame;
 
-	public RequestHandler(Socket socket) throws IOException 
+	public RequestHandler(Socket socket, DatabaseHandler xml) throws IOException 
 	{
+		sessionId = generateSessionId();
 		connection = new Communication(socket, this);
+		this.xml = xml;
 	}
 
 	public GamePlay<?> getCurrentGame() {
 		return currentGame;
 	}
-
+	
 	public void setCurrentGame(GamePlay<?> currentGame) {
 		this.currentGame = currentGame;
+	}
+
+	public Player getPlayer() {
+		return player;
+	}
+
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((connection == null) ? 0 : connection.hashCode());
+		result = prime * result + sessionId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RequestHandler other = (RequestHandler) obj;
+		if (connection == null) {
+			if (other.connection != null)
+				return false;
+		} else if (!connection.equals(other.connection))
+			return false;
+		if (sessionId != other.sessionId)
+			return false;
+		return true;
 	}
 
 	public void processMessage(Object value) 
@@ -54,31 +92,77 @@ public final class RequestHandler {
 			{
 				if(Authenticate(message))
 				{
+
 					Message<?> response = new Message<>(ServerMessageType.AUTHENTICATIONSUCCESS);
 					response.setPlayerName(player.getPlayerName());
 					response.setSessionId(player.getSessionId());
 					response.setMoney(player.getMoney());
-					// sendToConnectedClient(response);
+					send(response);
+
 				}
 				else
 				{
-					//					 RequestMessage response = new RequestMessage(ResponseType.AUTHENTICATIONFAIL);
-					//					 sendToConnectedClient(response);
-					//					 sendToConnectedClient(new DisconnectMessage("disconnect"));
+					Message<?> response = new Message<>(ServerMessageType.AUTHENTICATIONFAIL);
+					send(response);
 				} 
-			}
-			else if(request.equals(ClientMessageType.POKER.toString()))
+			}else if(request.equals(ClientMessageType.POKER.toString()))
 			{
-				if(!validateCurrentGameAsPoker())
+				if(!isCurrentGamePoker())
 				{
 					if(!RequestHandler.registerPokerPlayer(this.player, this))
 					{
-						//send - cannot add the player all poker servers are busy.
-					}
+						//TODO: send - cannot add the player all poker servers are busy.
+					}	
 				}
-				//this.currentGame.//
-
+				else{
+					this.currentGame.play(this.player, message);
+				}
+				
+			}else if(request.equals(ClientMessageType.BLACKJACK.toString()))
+			{
+				if(!isCurrentGameBlackJack())
+				{
+					if(!RequestHandler.registerBlackJackPlayer(this.player, this))
+					{
+						//TODO: send - cannot add the player all poker servers are busy.
+					}	
+				}
+				else{
+					this.currentGame.play(this.player, message);
+				}
+				
+			}else if(request.equals(ClientMessageType.SLOTS.toString()))
+			{
+				if(this.currentGame != null)
+						this.exitGame();
+				
+				Message<?> response = new Message<>(ServerMessageType.PLAYSLOTS);
+				send(response);
+				
+			}else if(request.equals(ClientMessageType.QUIT.toString()))
+			{
+				log.info(String.format("Quit message received from %s", this.player));
+				xml.updateMoney(this.player.getPlayerName(), this.player.getMoney());
+				Message<?> response = new Message<>(ServerMessageType.UPDATEMONEY);
+				response.setPlayerName(player.getPlayerName());
+				response.setSessionId(player.getSessionId());
+				response.setMoney(player.getMoney());
+				send(response);
+				if(this.currentGame != null)
+					this.exitGame();
 			}
+			else if(request.equals(ClientMessageType.UPDATEMONEY.toString()))
+			{
+				int money;
+				this.player.setMoney(message.getMoney());
+				xml.updateMoney(this.player.getPlayerName(), this.player.getMoney());
+				Message<?> response = new Message<>(ServerMessageType.UPDATEMONEY);
+				response.setPlayerName(player.getPlayerName());
+				response.setSessionId(player.getSessionId());
+				response.setMoney(player.getMoney());
+				send(response);
+			}
+			
 			//			else if(request.equals(RequestType.BLACKJACK.toString())){
 			//				int blackJackPort = getAvailablePort(RequestType.BLACKJACK);
 			//				if(blackJackPort < 1)
@@ -118,8 +202,6 @@ public final class RequestHandler {
 
 		}
 	} 
-
-
 	
 	public void send(Message<?> msg)
 	{
@@ -137,7 +219,7 @@ public final class RequestHandler {
 	/*
 	 * Verify whether the current game is poker
 	 */
-	private boolean validateCurrentGameAsPoker()
+	private boolean isCurrentGamePoker()
 	{
 		if(this.currentGame == null)
 		{
@@ -151,14 +233,32 @@ public final class RequestHandler {
 
 		return true;
 	}
+	
+	/*
+	 * Verify whether the current game is poker
+	 */
+	private boolean isCurrentGameBlackJack()
+	{
+		if(this.currentGame == null)
+		{
+			return false;
+		}
+		else if(!(this.currentGame instanceof BlackJackGamePlay))
+		{
+			this.exitGame();
+			return false;
+		}
+
+		return true;
+	}
 
 	/*
 	 * Exit this player from current game 
 	 */
 	private void exitGame()
 	{
-		//this.currentGame.exitGame(this)
-		//this.currentGame == null;
+		this.currentGame.exitGame(this);
+		this.currentGame = null;
 	}
 
 	private boolean Authenticate(Message<?> message) throws IndexOutOfBoundsException, ServerException
@@ -166,12 +266,12 @@ public final class RequestHandler {
 		if(message.getClientMessageType().equals(ClientMessageType.REGISTER.toString()))
 		{
 			xml.addPlayer(message.getPlayerName(), message.getMoney());
-			//	if(! checkDb(message.getPlayerId()))
-			return false;	
+			if(! checkDb(message.getPlayerName()))
+			     return false;	
 		}
 		else if(message.getClientMessageType().equals(ClientMessageType.LOGIN.toString()))
 		{
-			if(! checkLoggedInUsers(message.getPlayerName(), message.getSessionId(), message.getMoney()))
+			if(! checkLoggedInUsers())
 			{
 				if(! checkDb(message.getPlayerName()))
 					return false;	
@@ -180,13 +280,8 @@ public final class RequestHandler {
 		return true; 
 	}
 
-	public boolean checkLoggedInUsers(String playerName, int sessionId, int money)
+	public boolean checkLoggedInUsers()
 	{
-		Player player = new Player(playerName);
-		player.setSessionId(sessionId);
-		player.setMoney(money);
-
-
 		if(ServerApplication.playersLoggedIn.contains(this))
 			return true;
 
@@ -202,7 +297,7 @@ public final class RequestHandler {
 			val = xml.getPlayer(playerName);
 			Player player = new Player(val[0]);
 			player.setMoney((Integer)val[1]);
-			player.setSessionId(generateSessionId());
+			player.setSessionId(this.sessionId);
 
 			if(ServerApplication.playersLoggedIn.add(this))
 			{
@@ -230,7 +325,7 @@ public final class RequestHandler {
 		{
 			PokerGamePlay availablePokerGame = ServerApplication.availableFreePokerGamePlay();
 
-			if(availablePokerGame.equals(PokerGamePlay.INVALID))
+			if(availablePokerGame == PokerGamePlay.INVALID)
 			{
 				return false;
 			}
@@ -244,4 +339,23 @@ public final class RequestHandler {
 		return true;
 	}
 
+	private static synchronized boolean registerBlackJackPlayer(Player player, RequestHandler handler) 
+	{
+		try
+		{
+			BlackJackGamePlay availableBlackJackGame = ServerApplication.availableFreeBlackJackGamePlay();
+
+			if(availableBlackJackGame == BlackJackGamePlay.INVALID)
+			{
+				return false;
+			}
+			availableBlackJackGame.registerPlayerForGame(player, handler, true);
+		}
+		catch(CasinoException e)
+		{
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
 } // End of Request Handler

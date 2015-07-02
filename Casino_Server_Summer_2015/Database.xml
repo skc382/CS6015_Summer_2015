@@ -2,15 +2,14 @@
 <Players>
   <Player>
     <name>joseph</name>
-    <money>200</money>
+    <money>2000</money>
   </Player>
-    <Player>
+  <Player>
     <name>shreedhar</name>
-    <money>200</money>
+    <money>2000</money>
   </Player>
-    <Player>
+  <Player>
     <name>john</name>
-    <money>200</money>
+    <money>3570</money>
   </Player>
-
 </Players>

@@ -14,6 +14,7 @@ public class Deck implements Serializable{
 	
 	public Deck()
 	{
+		deck = new ArrayList<Card>();
 		loadDeck();
 	}	
 	
@@ -41,8 +42,14 @@ public class Deck implements Serializable{
 	
 	public Card deal()
 	{
+		shuffle();
 		Card topCard = deck.get(0);
 		deck.remove(0);
 		return topCard;
+	}
+
+	@Override
+	public String toString() {
+		return "Deck [deck=" + deck + "]";
 	}
 }

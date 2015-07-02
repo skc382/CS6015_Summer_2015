@@ -40,9 +40,16 @@ public final class Player implements Serializable {
 	}
 
 	public void setHand(Card card1, Card card2) {
-		this.hand = new ArrayList<Card>();
+		if(this.hand == null){
+			this.hand = new ArrayList<Card>();
+		}
 		this.hand.add(card1);
 		this.hand.add(card2);
+	}
+	
+	public void setHand(ArrayList<Card> hand)
+	{
+		this.hand = hand;
 	}
 	
 	@Override
@@ -73,4 +80,11 @@ public final class Player implements Serializable {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "Player [playerName=" + playerName + ", sessionId=" + sessionId
+				+ ", money=" + money + ", hand=" + hand + "]";
+	}
+	
 }
