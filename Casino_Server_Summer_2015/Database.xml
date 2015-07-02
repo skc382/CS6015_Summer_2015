@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Players>
+  <Player>
+    <name>joseph</name>
+    <money>2000</money>
+  </Player>
+  <Player>
+    <name>shreedhar</name>
+    <money>2000</money>
+  </Player>
+  <Player>
+    <name>john</name>
+    <money>3570</money>
+  </Player>
+</Players>
