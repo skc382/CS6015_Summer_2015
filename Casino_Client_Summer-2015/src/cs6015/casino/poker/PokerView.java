@@ -408,6 +408,7 @@ public class PokerView extends MasterView{
 					.addComponent(player3Panel))
 				.addGap(100)
 				.addComponent(player1Panel)
+				
 				.addContainerGap(50, 50));
 	}
 	
